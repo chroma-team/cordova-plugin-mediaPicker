@@ -22,6 +22,7 @@
     <source-file src="src/android/FileHelper.java" target-dir="src/com/dmc/mediaPickerPlugin"/>
     <resource-file src="src/android/Library/res/values-tr/multiimagechooser_strings_tr.xml" target="res/values-tr/multiimagechooser_strings_tr.xml"/>
     <resource-file src="src/android/Library/res/values-de/multiimagechooser_strings_de.xml" target="res/values-de/multiimagechooser_strings_de.xml"/>
+    <resource-file src="src/android/Library/res/values-fr/multiimagechooser_strings_fr.xml" target="res/values-fr/multiimagechooser_strings_fr.xml"/>
   </platform>
 
   <platform name="ios">
@@ -56,6 +57,7 @@
     <resource-file src="src/ios/DMCMediaPicker/pt-PT.lproj"/>
     <resource-file src="src/ios/DMCMediaPicker/tr.lproj"/>
     <resource-file src="src/ios/DMCMediaPicker/de.lproj"/>
+    <resource-file src="src/ios/DMCMediaPicker/fr-FR.lproj"/>
     <config-file target="*-Info.plist" parent="NSPhotoLibraryUsageDescription">
       <string>$IOS_PHOTO_LIBRARY_USAGE_DESCRIPTION</string>
     </config-file>  
