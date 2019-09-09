@@ -1,7 +1,10 @@
 /********* MediaPicker.m Cordova Plugin Implementation *******/
 
 #import <Cordova/CDV.h>
+#import <ImageIO/ImageIO.h>
+#import <MobileCoreServices/MobileCoreServices.h>
 #import "DmcPickerViewController.h"
+
 @interface MediaPicker : CDVPlugin <DmcPickerDelegate>{
   // Member variables go here.
     NSString* callbackId;
@@ -74,25 +77,152 @@
         NSString *compressCompletedjs = [NSString stringWithFormat:@"MediaPicker.icloudDownloadEvent(%f,%i)", progress,index];
         [self.commandDelegate evalJs:compressCompletedjs];
     };
+    
     [[PHImageManager defaultManager] requestImageDataForAsset:asset  options:options resultHandler:^(NSData * _Nullable imageData, NSString * _Nullable dataUTI, UIImageOrientation orientation, NSDictionary * _Nullable info) {
-        NSString *filename=[asset valueForKey:@"filename"];
-        NSString *fullpath=[NSString stringWithFormat:@"%@/%@%@", dmcPickerPath,[[NSProcessInfo processInfo] globallyUniqueString], filename];
-        NSNumber *size=[NSNumber numberWithLong:imageData.length];
-
+        NSString *fullpath = nil;
+        NSString *mimeType = nil;
         NSError *error = nil;
-        if (![imageData writeToFile:fullpath options:NSAtomicWrite error:&error]) {
+        NSString *filename = [asset valueForKey:@"filename"];
+        NSNumber *size = [NSNumber numberWithLong:imageData.length];
+
+        if ([[filename lowercaseString] hasSuffix:@".gif"]) {
+            mimeType = @"image/gif";
+            fullpath = [NSString stringWithFormat:@"%@/%@%@", dmcPickerPath,[[NSProcessInfo processInfo] globallyUniqueString], @".gif"];
+            [imageData writeToFile:fullpath options:NSAtomicWrite error:&error];
+        }
+        else {
+            mimeType = @"image/jpeg";
+            fullpath = [NSString stringWithFormat:@"%@/%@%@", dmcPickerPath,[[NSProcessInfo processInfo] globallyUniqueString], @".jpeg"];
+            UIImage *image = [UIImage imageWithData:imageData scale:1.0];
+            UIImage *rotatedImage = [self rotateWithOrientation:image];
+            [self writeProgressiveJPEGtoFile:fullpath anImage:rotatedImage anError:&error];
+        }
+        
+        if (error != nil) {
             NSLog(@"%@", [error localizedDescription]);
             [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:[error localizedDescription]] callbackId:callbackId];
-        } else {
-            
-            NSDictionary *dict=[NSDictionary dictionaryWithObjectsAndKeys:fullpath,@"path",[[NSURL fileURLWithPath:fullpath] absoluteString],@"uri",@"image",@"mediaType",size,@"size",[NSNumber numberWithInt:index],@"index", nil];
+        }
+        else {
+            NSDictionary *dict=[NSDictionary dictionaryWithObjectsAndKeys:fullpath,@"path",[[NSURL fileURLWithPath:fullpath] absoluteString],@"uri",@"image",@"mediaType",size,@"size",[NSNumber numberWithInt:index],@"index", mimeType, @"mimeType", nil];
             [aListArray addObject:dict];
-            if([aListArray count]==[selectArray count]){
+            if([aListArray count] == [selectArray count]){
                 [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:aListArray] callbackId:callbackId];
             }
         }
-        
     }];
+
+}
+
+- (UIImage *)rotateWithOrientation:(UIImage*)image {
+    
+    if (image.imageOrientation == UIImageOrientationUp) return image;
+    
+    CGAffineTransform transform = CGAffineTransformIdentity;
+    
+    switch (image.imageOrientation) {
+        case UIImageOrientationDown:
+        case UIImageOrientationDownMirrored:
+            transform = CGAffineTransformTranslate(transform, image.size.width, image.size.height);
+            transform = CGAffineTransformRotate(transform, M_PI);
+            break;
+            
+        case UIImageOrientationLeft:
+        case UIImageOrientationLeftMirrored:
+            transform = CGAffineTransformTranslate(transform, image.size.width, 0);
+            transform = CGAffineTransformRotate(transform, M_PI_2);
+            break;
+            
+        case UIImageOrientationRight:
+        case UIImageOrientationRightMirrored:
+            transform = CGAffineTransformTranslate(transform, 0, image.size.height);
+            transform = CGAffineTransformRotate(transform, -M_PI_2);
+            break;
+        case UIImageOrientationUp:
+        case UIImageOrientationUpMirrored:
+            break;
+    }
+    
+    switch (image.imageOrientation) {
+        case UIImageOrientationUpMirrored:
+        case UIImageOrientationDownMirrored:
+            transform = CGAffineTransformTranslate(transform, image.size.width, 0);
+            transform = CGAffineTransformScale(transform, -1, 1);
+            break;
+            
+        case UIImageOrientationLeftMirrored:
+        case UIImageOrientationRightMirrored:
+            transform = CGAffineTransformTranslate(transform, image.size.height, 0);
+            transform = CGAffineTransformScale(transform, -1, 1);
+            break;
+        case UIImageOrientationUp:
+        case UIImageOrientationDown:
+        case UIImageOrientationLeft:
+        case UIImageOrientationRight:
+            break;
+    }
+    
+    // Now we draw the underlying CGImage into a new context, applying the transform
+    // calculated above.
+    CGContextRef ctx = CGBitmapContextCreate(NULL, image.size.width, image.size.height,
+                                             CGImageGetBitsPerComponent(image.CGImage), 0,
+                                             CGImageGetColorSpace(image.CGImage),
+                                             CGImageGetBitmapInfo(image.CGImage));
+    CGContextConcatCTM(ctx, transform);
+    switch (image.imageOrientation) {
+        case UIImageOrientationLeft:
+        case UIImageOrientationLeftMirrored:
+        case UIImageOrientationRight:
+        case UIImageOrientationRightMirrored:
+            CGContextDrawImage(ctx, CGRectMake(0,0,image.size.height,image.size.width), image.CGImage);
+            break;
+            
+        default:
+            CGContextDrawImage(ctx, CGRectMake(0,0,image.size.width,image.size.height), image.CGImage);
+            break;
+    }
+    
+    // And now we just create a new UIImage from the drawing context
+    CGImageRef cgimg = CGBitmapContextCreateImage(ctx);
+    UIImage *img = [UIImage imageWithCGImage:cgimg];
+    CGContextRelease(ctx);
+    CGImageRelease(cgimg);
+    
+    return img;
+}
+
+- (BOOL) writeProgressiveJPEGtoFile:(NSString*)path anImage:(UIImage*)image anError:(NSError**) error
+{
+    CFURLRef url = (__bridge CFURLRef)[NSURL fileURLWithPath:path];
+    
+    CGImageDestinationRef destination = CGImageDestinationCreateWithURL(url, kUTTypePNG, 1, NULL);
+    if (!destination) {
+        NSMutableDictionary* details = [NSMutableDictionary dictionary];
+        [details setValue:[NSString stringWithFormat:@"Failed to create CGImageDestination for %@", path] forKey:NSLocalizedDescriptionKey];
+        *error = [NSError errorWithDomain:@"world" code:200 userInfo:details];
+        return NO;
+    }
+    
+    NSDictionary *jfifProperties = [NSDictionary dictionaryWithObjectsAndKeys:
+                                    (__bridge id)kCFBooleanTrue, kCGImagePropertyJFIFIsProgressive,
+                                    nil];
+    
+    NSDictionary *properties = [NSDictionary dictionaryWithObjectsAndKeys:
+                                [NSNumber numberWithFloat:1.0], kCGImageDestinationLossyCompressionQuality,
+                                jfifProperties, kCGImagePropertyJFIFDictionary,
+                                nil];
+    
+    CGImageDestinationAddImage(destination, image.CGImage, (__bridge CFDictionaryRef)properties);
+    
+    if (!CGImageDestinationFinalize(destination)) {
+        NSMutableDictionary* details = [NSMutableDictionary dictionary];
+        [details setValue:[NSString stringWithFormat:@"Failed to write image to %@", path] forKey:NSLocalizedDescriptionKey];
+        *error = [NSError errorWithDomain:@"world" code:200 userInfo:details];
+        CFRelease(destination);
+        return NO;
+    }
+    
+    CFRelease(destination);
+    return YES;
 }
 
 - (void)getExifForKey:(CDVInvokedUrlCommand*)command
@@ -114,7 +244,6 @@
 
 
 }
-
 
 -(void)videoToSandbox:(PHAsset *)asset dmcPickerPath:(NSString*)dmcPickerPath aListArray:(NSMutableArray*)aListArray selectArray:(NSMutableArray*)selectArray index:(int)index{
     PHImageRequestOptions *options = [[PHImageRequestOptions alloc] init];
@@ -170,8 +299,7 @@
         [exportSession exportAsynchronouslyWithCompletionHandler:^{
 
             if (exportSession.status == AVAssetExportSessionStatusFailed) {
-                NSString * errorString = [NSString stringWithFormat:@"videoToSandboxCompress failed %@",exportSession.error];
-               [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:errorString] callbackId:callbackId];
+               [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"compress failed"] callbackId:callbackId];
                 NSLog(@"failed");
                 
             } else if(exportSession.status == AVAssetExportSessionStatusCompleted){
@@ -276,7 +404,7 @@
     NSMutableDictionary *options = [command.arguments objectAtIndex: 0];
 
     NSInteger quality=[[options objectForKey:@"quality"] integerValue];
-    if(quality<100&&[@"image" isEqualToString: [options objectForKey:@"mediaType"]]){
+    if([@"image" isEqualToString: [options objectForKey:@"mediaType"]]){
         UIImage *result = [[UIImage alloc] initWithContentsOfFile: [options objectForKey:@"path"]];
         NSInteger qu = quality>0?quality:3;
         CGFloat q=qu/100.0f;
