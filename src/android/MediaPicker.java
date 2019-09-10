@@ -201,11 +201,11 @@ public class MediaPicker extends CordovaPlugin {
         bitmap = Bitmap.createScaledBitmap(bitmap, width, height, true);
         bitmap.compress(Bitmap.CompressFormat.JPEG, 1, baos);
 
-        int lastSlashIndex = media.path.lastIndexOf("/");
-        String directory = media.path.substring(0, lastSlashIndex);
-        String filename = media.path.substring(lastSlashIndex);
+        int index = media.path.lastIndexOf("/") + 1;
+        String directory = media.path.substring(0, index);
+        String filename = media.path.substring(index);
 
-        File file= new File(directory, "thumbnail_" + filename);
+        File file = new File(directory, "thumbnail_" + filename);
 
         try {
             FileOutputStream fos = new FileOutputStream(file);
