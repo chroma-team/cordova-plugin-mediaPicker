@@ -16,6 +16,6 @@
     <string name="preview">Aperçu</string>
     <string name="select">Select</string>
     <string name="video">Vidéo</string>
-    <string name="cant_play_video">Can't play video !</string>
+    <string name="cant_play_video">Can\'t play video !</string>
     <string name="READ_EXTERNAL_STORAGE">READ_EXTERNAL_STORAGE</string>
 </resources>
