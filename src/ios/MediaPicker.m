@@ -103,15 +103,12 @@
     options.deliveryMode = PHImageRequestOptionsDeliveryModeHighQualityFormat;
     options.resizeMode = PHImageRequestOptionsResizeModeExact;
     
-    CGFloat thumbnailWidth = [[UIScreen mainScreen] bounds].size.width / 2;
-    CGSize targetSize = CGSizeMake(thumbnailWidth, thumbnailWidth);
-    
-    [[PHImageManager defaultManager] requestImageForAsset:asset targetSize:targetSize contentMode:PHImageContentModeAspectFit options:options resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
+    [[PHImageManager defaultManager] requestImageForAsset:asset targetSize:CGSizeMake(450, 450) contentMode:PHImageContentModeAspectFit options:options resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
         NSString *filename = [asset valueForKey:@"filename"];
         NSString *fullpath = [NSString stringWithFormat:@"%@/%@%@%@", dmcPickerPath, @"thumbnail_", uniqueString, filename];
         NSError *error = nil;
         
-        UIImage *rotatedImage = [self rotateWithOrientation:result];
+        UIImage *rotatedImage = [self rotateImage:result];
         NSData *imageData = UIImageJPEGRepresentation(rotatedImage, 1.0);
         [imageData writeToFile:fullpath options:NSAtomicWrite error:&error];
         
@@ -121,81 +118,48 @@
     }];
 }
 
-- (UIImage *)rotateWithOrientation:(UIImage*)image {
+- (UIImage*) rotateImage:(UIImage*) image {
     
-    if (image.imageOrientation == UIImageOrientationUp) return image;
+    int rotation = 0;
     
-    CGAffineTransform transform = CGAffineTransformIdentity;
-    
-    switch (image.imageOrientation) {
-        case UIImageOrientationDown:
-        case UIImageOrientationDownMirrored:
-            transform = CGAffineTransformTranslate(transform, image.size.width, image.size.height);
-            transform = CGAffineTransformRotate(transform, M_PI);
-            break;
-            
-        case UIImageOrientationLeft:
-        case UIImageOrientationLeftMirrored:
-            transform = CGAffineTransformTranslate(transform, image.size.width, 0);
-            transform = CGAffineTransformRotate(transform, M_PI_2);
-            break;
-            
-        case UIImageOrientationRight:
-        case UIImageOrientationRightMirrored:
-            transform = CGAffineTransformTranslate(transform, 0, image.size.height);
-            transform = CGAffineTransformRotate(transform, -M_PI_2);
-            break;
+    switch ([image imageOrientation]) {
         case UIImageOrientationUp:
-        case UIImageOrientationUpMirrored:
+            rotation = 0;
             break;
-    }
-    
-    switch (image.imageOrientation) {
-        case UIImageOrientationUpMirrored:
-        case UIImageOrientationDownMirrored:
-            transform = CGAffineTransformTranslate(transform, image.size.width, 0);
-            transform = CGAffineTransformScale(transform, -1, 1);
-            break;
-            
-        case UIImageOrientationLeftMirrored:
-        case UIImageOrientationRightMirrored:
-            transform = CGAffineTransformTranslate(transform, image.size.height, 0);
-            transform = CGAffineTransformScale(transform, -1, 1);
-            break;
-        case UIImageOrientationUp:
         case UIImageOrientationDown:
-        case UIImageOrientationLeft:
-        case UIImageOrientationRight:
+            rotation = 180;
             break;
-    }
-    
-    // Now we draw the underlying CGImage into a new context, applying the transform
-    // calculated above.
-    CGContextRef ctx = CGBitmapContextCreate(NULL, image.size.width, image.size.height,
-                                             CGImageGetBitsPerComponent(image.CGImage), 0,
-                                             CGImageGetColorSpace(image.CGImage),
-                                             CGImageGetBitmapInfo(image.CGImage));
-    CGContextConcatCTM(ctx, transform);
-    switch (image.imageOrientation) {
         case UIImageOrientationLeft:
-        case UIImageOrientationLeftMirrored:
-        case UIImageOrientationRight:
-        case UIImageOrientationRightMirrored:
-            CGContextDrawImage(ctx, CGRectMake(0,0,image.size.height,image.size.width), image.CGImage);
+            rotation = 270;
             break;
-            
+        case UIImageOrientationRight:
+            rotation = 90;
+            break;
         default:
-            CGContextDrawImage(ctx, CGRectMake(0,0,image.size.width,image.size.height), image.CGImage);
             break;
     }
     
-    // And now we just create a new UIImage from the drawing context
-    CGImageRef cgimg = CGBitmapContextCreateImage(ctx);
-    UIImage *img = [UIImage imageWithCGImage:cgimg];
-    CGContextRelease(ctx);
-    CGImageRelease(cgimg);
+    CGFloat radians = rotation * M_PI / 180;
     
-    return img;
+    UIView *rotatedViewBox = [[UIView alloc] initWithFrame:CGRectMake(0, 0, image.size.width, image.size.height)];
+    CGAffineTransform t = CGAffineTransformMakeRotation(radians);
+    rotatedViewBox.transform = t;
+    CGSize rotatedSize = rotatedViewBox.frame.size;
+    
+    UIGraphicsBeginImageContextWithOptions(rotatedSize, NO, [[UIScreen mainScreen] scale]);
+    CGContextRef bitmap = UIGraphicsGetCurrentContext();
+    
+    CGContextTranslateCTM(bitmap, rotatedSize.width / 2, rotatedSize.height / 2);
+    
+    CGContextRotateCTM(bitmap, radians);
+    
+    CGContextScaleCTM(bitmap, 1.0, -1.0);
+    CGContextDrawImage(bitmap, CGRectMake(-image.size.width / 2, -image.size.height / 2, image.size.width, image.size.height), [image CGImage]);
+    
+    UIImage *newImage = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    
+    return newImage;
 }
 
 - (void)getExifForKey:(CDVInvokedUrlCommand*)command
