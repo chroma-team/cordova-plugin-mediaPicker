@@ -194,11 +194,15 @@ public class MediaPicker extends CordovaPlugin {
 
     private void createImageThumbnail(Media media, int width, int height) {
         File image = new File(media.path);
+        int degree = getBitmapRotate(media.path);
+
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
         BitmapFactory.Options bitmapOptions = new BitmapFactory.Options();
         Bitmap bitmap = BitmapFactory.decodeFile(image.getAbsolutePath(), bitmapOptions);
+        bitmap = rotatingImage(degree, bitmap);
         bitmap = Bitmap.createScaledBitmap(bitmap, width, height, true);
+
         bitmap.compress(Bitmap.CompressFormat.JPEG, 1, baos);
 
         int index = media.path.lastIndexOf("/") + 1;
