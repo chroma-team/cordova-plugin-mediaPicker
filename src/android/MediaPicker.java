@@ -1,15 +1,19 @@
 package com.dmc.mediaPickerPlugin;
 
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
+import android.graphics.Point;
 import android.media.ExifInterface;
 import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.provider.MediaStore;
 import android.util.Base64;
 import android.util.Log;
+import android.view.Display;
+import android.view.WindowManager;
 
 import com.dmcbig.mediapicker.PickerActivity;
 import com.dmcbig.mediapicker.PickerConfig;
@@ -41,6 +45,7 @@ public class MediaPicker extends CordovaPlugin {
     private  int quality=100;//default original
     private  int thumbnailW=200;
     private  int thumbnailH=200;
+    private Point screenSize;
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
         getPublicArgs(args);
@@ -159,6 +164,14 @@ public class MediaPicker extends CordovaPlugin {
                 final ArrayList<Media> select=intent.getParcelableArrayListExtra(PickerConfig.EXTRA_RESULT);
                 final JSONArray jsonArray=new JSONArray();
 
+                if (this.screenSize == null) {
+                    Context context = this.cordova.getActivity().getApplicationContext();
+                    WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+                    Display display = wm.getDefaultDisplay();
+                    this.screenSize = new Point();
+                    display.getSize(this.screenSize);
+                }
+
                 cordova.getThreadPool().execute(new Runnable() {
                     public void run() {
                         try {
@@ -176,7 +189,8 @@ public class MediaPicker extends CordovaPlugin {
                                 index++;
 
                                 if (media.mediaType != 3) {
-                                    MediaPicker.this.createImageThumbnail(media, 450, 450);
+                                    int thumbnailSize = MediaPicker.this.screenSize.x / 2;
+                                    MediaPicker.this.createImageThumbnail(media, thumbnailSize, thumbnailSize);
                                 }
                             }
 
