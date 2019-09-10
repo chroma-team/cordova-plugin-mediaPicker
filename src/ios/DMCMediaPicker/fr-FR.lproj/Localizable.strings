@@ -2,7 +2,7 @@
 "Done"="Valider";
 "All"="Toutes les photos";
 "Video"="Vidéo";
-"maxSelectAlert"="Vous avez atteint la limite de sélection";
+"maxSelectAlert"="La limite est de 10 photos ou vidéos";
 "ok"="OK";
 "Unable to access album" = "Impossible d'accèder à l'album";
 "Please allow to access your album" = "Autoriser l'accès à cet album depuis \"Réglages -> Vie privée -> Album\"";
