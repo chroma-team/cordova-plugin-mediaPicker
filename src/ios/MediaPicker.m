@@ -78,7 +78,7 @@
     };
     [[PHImageManager defaultManager] requestImageDataForAsset:asset  options:options resultHandler:^(NSData * _Nullable imageData, NSString * _Nullable dataUTI, UIImageOrientation orientation, NSDictionary * _Nullable info) {
         NSString *filename=[asset valueForKey:@"filename"];
-        NSString *fullpath=[NSString stringWithFormat:@"%@/%@%@%@", dmcPickerPath, uniqueString, @"_hoopop_original_", filename];
+        NSString *fullpath=[NSString stringWithFormat:@"%@/%@%@", dmcPickerPath, uniqueString, filename];
         NSNumber *size=[NSNumber numberWithLong:imageData.length];
 
         NSError *error = nil;
@@ -105,7 +105,7 @@
     
     [[PHImageManager defaultManager] requestImageForAsset:asset targetSize:CGSizeMake(450,450) contentMode:PHImageContentModeAspectFit options:options resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
         NSString *filename = [asset valueForKey:@"filename"];
-        NSString *fullpath = [NSString stringWithFormat:@"%@/%@%@", dmcPickerPath, uniqueString, @"_hoopop_thumbnail.jpeg"];
+        NSString *fullpath = [NSString stringWithFormat:@"%@/%@%@%@", dmcPickerPath, @"thumbnail_", uniqueString, filename];
         NSError *error = nil;
         
         UIImage *rotatedImage = [self rotateWithOrientation:result];
