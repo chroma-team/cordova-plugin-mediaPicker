@@ -176,7 +176,7 @@ public class MediaPicker extends CordovaPlugin {
                                 index++;
 
                                 if (media.mediaType != 3) {
-                                    MediaPicker.this.createImageThumbnail(media, 400, 400);
+                                    MediaPicker.this.createImageThumbnail(media, 450, 450);
                                 }
                             }
 
