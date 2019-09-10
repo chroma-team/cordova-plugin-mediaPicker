@@ -163,6 +163,7 @@ public class MediaPicker extends CordovaPlugin {
                     public void run() {
                         try {
                             int index=0;
+
                             for(Media media:select){
                                 JSONObject object=new JSONObject();
                                 object.put("path",media.path);
@@ -173,7 +174,12 @@ public class MediaPicker extends CordovaPlugin {
                                 object.put("mediaType",media.mediaType==3?"video":"image");
                                 jsonArray.put(object);
                                 index++;
+
+                                if (media.mediaType != 3) {
+                                    MediaPicker.this.createImageThumbnail(media, 400, 400);
+                                }
                             }
+
                             MediaPicker.this.callback.success(jsonArray);
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -182,6 +188,32 @@ public class MediaPicker extends CordovaPlugin {
                 });
             }
         } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void createImageThumbnail(Media media, int width, int height) {
+        File image = new File(media.path);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        BitmapFactory.Options bitmapOptions = new BitmapFactory.Options();
+        Bitmap bitmap = BitmapFactory.decodeFile(image.getAbsolutePath(), bitmapOptions);
+        bitmap = Bitmap.createScaledBitmap(bitmap, width, height, true);
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 1, baos);
+
+        int lastSlashIndex = media.path.lastIndexOf("/");
+        String directory = media.path.substring(0, lastSlashIndex);
+        String filename = media.path.substring(lastSlashIndex);
+
+        File file= new File(directory, "thumbnail_" + filename);
+
+        try {
+            FileOutputStream fos = new FileOutputStream(file);
+            fos.write(baos.toByteArray());
+            fos.flush();
+            fos.close();
+        } catch (Exception e) {
+            MediaPicker.this.callback.error("createImageThumbnail error"+e);
             e.printStackTrace();
         }
     }
