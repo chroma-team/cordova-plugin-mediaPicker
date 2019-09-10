@@ -217,7 +217,7 @@ public class MediaPicker extends CordovaPlugin {
         bitmap = rotatingImage(degree, bitmap);
         bitmap = Bitmap.createScaledBitmap(bitmap, width, height, true);
 
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 1, baos);
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
 
         int index = media.path.lastIndexOf("/") + 1;
         String directory = media.path.substring(0, index);
