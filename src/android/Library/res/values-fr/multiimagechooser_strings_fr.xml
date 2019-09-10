@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="library_name">MediaPicker</string>
+    <string name="all_dir_name">Toutes les photos et vidéos</string>
+    <string name="all_video">Toutes les vidéos</string>
+    <string name="all_image">Toutes les photos</string>
+    <string name="select_title">select_title</string>
+    <string name="select_video_title">select_video_title</string>
+    <string name="select_image_title">select_image_title</string>
+    <string name="video_dir_name">Vidéos</string>
+    <string name="msg_amount_limit">msg_amount_limit</string>
+    <string name="msg_size_limit">msg_size_limit</string>
+    <string name="select_null">select_null</string>
+    <string name="done">Valider</string>
+    <string name="count_string"></string>
+    <string name="preview">Aperçu</string>
+    <string name="select">Select</string>
+    <string name="video">Vidéo</string>
+    <string name="cant_play_video">Can't play video !</string>
+    <string name="READ_EXTERNAL_STORAGE">READ_EXTERNAL_STORAGE</string>
+</resources>
