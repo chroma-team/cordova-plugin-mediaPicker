@@ -9,13 +9,13 @@
     <string name="select_image_title">Photos</string>
     <string name="video_dir_name">Vidéos</string>
     <string name="msg_amount_limit">La limite est de 10 photos ou vidéos</string>
-    <string name="msg_size_limit">msg_size_limit</string>
-    <string name="select_null">select_null</string>
+    <string name="msg_size_limit">La limite est de 10 photos ou vidéos</string>
+    <string name="select_null">Aucune photo ou vidéo sélectionnée</string>
     <string name="done">Valider </string>
     <string name="count_string"></string>
     <string name="preview">Aperçu </string>
     <string name="select">Choisir </string>
     <string name="video">Vidéo</string>
     <string name="cant_play_video">Impossible de jouer la vidéo</string>
-    <string name="READ_EXTERNAL_STORAGE">Autoriser l'accès aux photos et vidéos</string>
+    <string name="READ_EXTERNAL_STORAGE">Autoriser l\'accès aux photos et vidéos</string>
 </resources>
