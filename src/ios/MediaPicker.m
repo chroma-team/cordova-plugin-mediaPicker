@@ -44,8 +44,6 @@
         [fileManager createDirectoryAtPath:dmcPickerPath withIntermediateDirectories:YES attributes:nil error:nil];
     }
     
-    NSLog(@"selectArray : %@", selectArray);
-    
     NSMutableArray * aListArray=[[NSMutableArray alloc] init];
     if([selectArray count]<=0){
         [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:aListArray] callbackId:callbackId];
