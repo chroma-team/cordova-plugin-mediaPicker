@@ -44,6 +44,8 @@
         [fileManager createDirectoryAtPath:dmcPickerPath withIntermediateDirectories:YES attributes:nil error:nil];
     }
     
+    NSLog(@"selectArray : %@", selectArray);
+    
     NSMutableArray * aListArray=[[NSMutableArray alloc] init];
     if([selectArray count]<=0){
         [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:aListArray] callbackId:callbackId];
@@ -87,6 +89,7 @@
 -(void)imageToSandbox:(PHAsset *)asset dmcPickerPath:(NSString*)dmcPickerPath uniqueString:(NSString *)uniqueString aListArray:(NSMutableArray*)aListArray selectArray:(NSMutableArray*)selectArray index:(int)index handler:(void(^)(NSError*))done {
     PHImageRequestOptions *options = [[PHImageRequestOptions alloc] init];
     options.networkAccessAllowed = YES;
+    options.synchronous = YES;
     options.resizeMode = PHImageRequestOptionsResizeModeFast;
     options.progressHandler = ^(double progress, NSError *error, BOOL *stop, NSDictionary *info) {
         NSString *compressCompletedjs = [NSString stringWithFormat:@"MediaPicker.icloudDownloadEvent(%f,%i)", progress,index];
@@ -115,7 +118,8 @@
 -(void)imageThumbnailToSandbox:(PHAsset *)asset dmcPickerPath:(NSString*)dmcPickerPath uniqueString:(NSString *)uniqueString handler:(void(^)(NSError*))done {
     PHImageRequestOptions *options = [[PHImageRequestOptions alloc] init];
     options.networkAccessAllowed = YES;
-    options.deliveryMode = PHImageRequestOptionsDeliveryModeHighQualityFormat;
+    options.synchronous = YES;
+    //options.deliveryMode = PHImageRequestOptionsDeliveryModeHighQualityFormat;
     options.resizeMode = PHImageRequestOptionsResizeModeExact;
     
     [[PHImageManager defaultManager] requestImageForAsset:asset targetSize:CGSizeMake(450, 450) contentMode:PHImageContentModeAspectFit options:options resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
