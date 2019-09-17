@@ -120,7 +120,7 @@
     //options.deliveryMode = PHImageRequestOptionsDeliveryModeHighQualityFormat;
     options.resizeMode = PHImageRequestOptionsResizeModeExact;
     
-    [[PHImageManager defaultManager] requestImageForAsset:asset targetSize:CGSizeMake(450, 450) contentMode:PHImageContentModeAspectFit options:options resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
+    [[PHImageManager defaultManager] requestImageForAsset:asset targetSize:CGSizeMake(650, 650) contentMode:PHImageContentModeAspectFit options:options resultHandler:^(UIImage * _Nullable result, NSDictionary * _Nullable info) {
         NSError *error = nil;
         NSString *filename = [asset valueForKey:@"filename"];
         NSString *fullpath = [NSString stringWithFormat:@"%@/%@%@%@", dmcPickerPath, @"thumbnail_", uniqueString, filename];
