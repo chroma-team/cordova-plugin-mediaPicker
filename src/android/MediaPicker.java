@@ -334,7 +334,7 @@ public class MediaPicker extends CordovaPlugin {
         matrix.postScale(scaleWidth, scaleHeight);
 
         // "RECREATE" THE NEW BITMAP
-        Bitmap resizedBitmap = Bitmap.createBitmap(bm, 0, 0, width, height, matrix, false);
+        Bitmap resizedBitmap = Bitmap.createBitmap(bm, 0, 0, width, height, matrix, true);
         if(!isNecessaryToKeepOrig){
             bm.recycle();
         }
