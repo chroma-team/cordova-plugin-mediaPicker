@@ -126,7 +126,7 @@
         NSString *fullpath = [NSString stringWithFormat:@"%@/%@%@%@", dmcPickerPath, @"thumbnail_", uniqueString, filename];
         
         UIImage *rotatedImage = [self rotateImage:result];
-        NSData *imageData = UIImageJPEGRepresentation(rotatedImage, 1.0);
+        NSData *imageData = UIImageJPEGRepresentation(rotatedImage, 0.9);
         [imageData writeToFile:fullpath options:NSAtomicWrite error:&error];
         
         return done(error);

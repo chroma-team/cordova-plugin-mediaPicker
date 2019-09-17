@@ -9,6 +9,7 @@ import android.graphics.Point;
 import android.media.ExifInterface;
 import android.media.ThumbnailUtils;
 import android.net.Uri;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Base64;
 import android.util.Log;
@@ -17,6 +18,7 @@ import com.dmcbig.mediapicker.PickerActivity;
 import com.dmcbig.mediapicker.PickerConfig;
 import com.dmcbig.mediapicker.TakePhotoActivity;
 import com.dmcbig.mediapicker.entity.Media;
+import com.dmcbig.mediapicker.utils.FileUtils;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
@@ -31,6 +33,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 
 
@@ -43,6 +47,8 @@ public class MediaPicker extends CordovaPlugin {
     private  int quality=100;//default original
     private  int thumbnailW=200;
     private  int thumbnailH=200;
+
+    private static String UPLOAD_DIR = "/upload-dir";
 
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
@@ -83,6 +89,9 @@ public class MediaPicker extends CordovaPlugin {
     }
 
     private void getMedias(JSONArray args, CallbackContext callbackContext) {
+        File cacheDir = getTempDirectory();
+        cacheDir.delete();
+
         this.callback=callbackContext;
         Intent intent =new Intent(cordova.getActivity(), PickerActivity.class);
         intent.putExtra(PickerConfig.MAX_SELECT_COUNT,10);  //default 40 (Optional)
@@ -168,6 +177,8 @@ public class MediaPicker extends CordovaPlugin {
                             int index=0;
 
                             for(Media media:select){
+                                media.path = MediaPicker.this.imageToTmp(media.path);
+
                                 JSONObject object=new JSONObject();
                                 object.put("path",media.path);
                                 object.put("uri",Uri.fromFile(new File(media.path)));//Uri.fromFile(file).toString() || [NSURL fileURLWithPath:filePath] absoluteString]
@@ -179,12 +190,12 @@ public class MediaPicker extends CordovaPlugin {
                                 index++;
 
                                 if (media.mediaType != 3) {
-                                    MediaPicker.this.createImageThumbnail(media, 450, 450);
+                                    MediaPicker.this.createImageThumbnail(media);
                                 }
                             }
 
                             MediaPicker.this.callback.success(jsonArray);
-                        } catch (JSONException e) {
+                        } catch (JSONException | IOException e) {
                             e.printStackTrace();
                         }
                     }
@@ -195,7 +206,49 @@ public class MediaPicker extends CordovaPlugin {
         }
     }
 
-    private void createImageThumbnail(Media media, int width, int height) {
+    private File getTempDirectory() {
+        String path;
+
+        // SD Card Mounted
+        if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED) && Environment.isExternalStorageRemovable()) {
+            path = Environment.getExternalStorageDirectory().getAbsolutePath() +
+                    "/Android/data/" + cordova.getActivity().getPackageName() + "/cache"  + UPLOAD_DIR;
+        } else {
+            // Use internal storage
+            path = cordova.getActivity().getCacheDir().getPath() + UPLOAD_DIR;
+        }
+
+        // Create the cache directory if it doesn't exist
+        File cache = new File(path);
+        cache.mkdirs();
+        return cache;
+    }
+
+    private String imageToTmp(String path) throws IOException {
+        File cacheDir = getTempDirectory();
+
+        File pickedFile = new File(path);
+
+        int filenamePos = path.lastIndexOf("/");
+        String filename = filenamePos > -1 ? path.substring(filenamePos + 1) : "hoopop_media";
+
+        File copiedFile = new File(cacheDir.getPath() + "/" + filename);
+        copiedFile.createNewFile();
+
+        try (InputStream in = new FileInputStream(pickedFile)) {
+            try (OutputStream out = new FileOutputStream(copiedFile)) {
+                byte[] buf = new byte[1024];
+                int len;
+                while ((len = in.read(buf)) > 0) {
+                    out.write(buf, 0, len);
+                }
+            }
+        }
+
+        return copiedFile.getPath();
+    }
+
+    private void createImageThumbnail(Media media) {
         File image = new File(media.path);
         int degree = getBitmapRotate(media.path);
 
@@ -204,25 +257,37 @@ public class MediaPicker extends CordovaPlugin {
         BitmapFactory.Options bitmapOptions = new BitmapFactory.Options();
         Bitmap bitmap = BitmapFactory.decodeFile(image.getAbsolutePath(), bitmapOptions);
         bitmap = rotatingImage(degree, bitmap);
-        bitmap = Bitmap.createScaledBitmap(bitmap, width, height, true);
-
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+        bitmap = scaleBitmap(bitmap, 450);
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 90, baos);
 
         int index = media.path.lastIndexOf("/") + 1;
         String directory = media.path.substring(0, index);
         String filename = media.path.substring(index);
 
-        File file = new File(directory, "thumbnail_" + filename);
-
         try {
+            File file = new File(directory, "thumbnail_" + filename);
+            file.createNewFile();
+
             FileOutputStream fos = new FileOutputStream(file);
             fos.write(baos.toByteArray());
             fos.flush();
             fos.close();
+
         } catch (Exception e) {
             MediaPicker.this.callback.error("createImageThumbnail error"+e);
             e.printStackTrace();
         }
+    }
+
+    private Bitmap scaleBitmap(Bitmap bitmap, int scaleSize) {
+        int width = bitmap.getWidth();
+        int height = bitmap.getHeight();
+
+        float ratio = Math.min((float) scaleSize / width, (float) scaleSize / height);
+        int newWidth = Math.round(ratio * width);
+        int newHeight = Math.round(ratio * height);
+
+        return Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true);
     }
 
     public  void extractThumbnail(JSONArray args, CallbackContext callbackContext){
