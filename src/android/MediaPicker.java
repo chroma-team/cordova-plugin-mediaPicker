@@ -257,7 +257,7 @@ public class MediaPicker extends CordovaPlugin {
         BitmapFactory.Options bitmapOptions = new BitmapFactory.Options();
         Bitmap bitmap = BitmapFactory.decodeFile(image.getAbsolutePath(), bitmapOptions);
         bitmap = rotatingImage(degree, bitmap);
-        bitmap = scaleBitmap(bitmap, 650);
+        bitmap = getScaledDownBitmap(bitmap, 650, false);
         bitmap.compress(Bitmap.CompressFormat.JPEG, 90, baos);
 
         int index = media.path.lastIndexOf("/") + 1;
@@ -279,18 +279,69 @@ public class MediaPicker extends CordovaPlugin {
         }
     }
 
-    private Bitmap scaleBitmap(Bitmap bitmap, int scaleSize) {
+    /**
+     * @param bitmap the Bitmap to be scaled
+     * @param threshold the maximum dimension (either width or height) of the scaled bitmap
+     * @param isNecessaryToKeepOrig is it necessary to keep the original bitmap? If not recycle the original bitmap to prevent memory leak.
+     * */
+    private Bitmap getScaledDownBitmap(Bitmap bitmap, int threshold, boolean isNecessaryToKeepOrig){
         int width = bitmap.getWidth();
         int height = bitmap.getHeight();
+        int newWidth = width;
+        int newHeight = height;
 
-        float ratio = Math.min((float) scaleSize / width, (float) scaleSize / height);
-        int newWidth = Math.round(ratio * width);
-        int newHeight = Math.round(ratio * height);
+        if(width > height && width > threshold){
+            newWidth = threshold;
+            newHeight = (int)(height * (float)newWidth/width);
+        }
 
-        return Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true);
+        if(width > height && width <= threshold){
+            //the bitmap is already smaller than our required dimension, no need to resize it
+            return bitmap;
+        }
+
+        if(width < height && height > threshold){
+            newHeight = threshold;
+            newWidth = (int)(width * (float)newHeight/height);
+        }
+
+        if(width < height && height <= threshold){
+            //the bitmap is already smaller than our required dimension, no need to resize it
+            return bitmap;
+        }
+
+        if(width == height && width > threshold){
+            newWidth = threshold;
+            newHeight = newWidth;
+        }
+
+        if(width == height && width <= threshold){
+            //the bitmap is already smaller than our required dimension, no need to resize it
+            return bitmap;
+        }
+
+        return getResizedBitmap(bitmap, newWidth, newHeight, isNecessaryToKeepOrig);
     }
 
-    public  void extractThumbnail(JSONArray args, CallbackContext callbackContext){
+    private Bitmap getResizedBitmap(Bitmap bm, int newWidth, int newHeight, boolean isNecessaryToKeepOrig) {
+        int width = bm.getWidth();
+        int height = bm.getHeight();
+        float scaleWidth = ((float) newWidth) / width;
+        float scaleHeight = ((float) newHeight) / height;
+        // CREATE A MATRIX FOR THE MANIPULATION
+        Matrix matrix = new Matrix();
+        // RESIZE THE BIT MAP
+        matrix.postScale(scaleWidth, scaleHeight);
+
+        // "RECREATE" THE NEW BITMAP
+        Bitmap resizedBitmap = Bitmap.createBitmap(bm, 0, 0, width, height, matrix, false);
+        if(!isNecessaryToKeepOrig){
+            bm.recycle();
+        }
+        return resizedBitmap;
+    }
+
+    public void extractThumbnail(JSONArray args, CallbackContext callbackContext){
         JSONObject jsonObject=new JSONObject();
         if (args != null && args.length() > 0) {
             try {
