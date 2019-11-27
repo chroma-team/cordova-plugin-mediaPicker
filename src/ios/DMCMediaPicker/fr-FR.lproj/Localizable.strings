@@ -2,8 +2,9 @@
 "Done"="Suivant";
 "All"="Toutes les photos";
 "Video"="Vidéo";
-"maxSelectAlert"="La limite est de 10 photos ou vidéos";
 "ok"="Suivant";
+"maxSelectAlert"="Vous ne pouvez pas choisir plus de 10 photos ou vidéos";
+"maxSizeAlert"="Vous ne pouvez pas choisir plus de %.02f mo de photos ou vidéos";
 "Unable to access album" = "Impossible d'accèder à l'album";
 "Please allow to access your album" = "Autoriser l'accès à cet album depuis \"Réglages -> Vie privée -> Album\"";
 "Setting" = "Réglages";
